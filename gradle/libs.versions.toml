@@ -1,0 +1,11 @@
+[versions]
+keycloak = "18.0.18.redhat-00001"
+freemarker = "2.3.31"
+
+[libraries]
+keycloak-core = { module = "org.keycloak:keycloak-core", version.ref = "keycloak" }
+keycloak-server-spi = { module = "org.keycloak:keycloak-server-spi", version.ref = "keycloak" }
+keycloak-server-spi-private = {module = "org.keycloak:keycloak-server-spi-private", version.ref = "keycloak" }
+keycloak-services = { module = "org.keycloak:keycloak-services", version.ref = "keycloak" }
+keycloak-ldap-federation = { module = "org.keycloak:keycloak-ldap-federation", version.ref = "keycloak" }
+freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
