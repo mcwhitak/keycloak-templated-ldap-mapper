@@ -1,6 +1,7 @@
 plugins {
   `java-library`
   alias(libs.plugins.spotless)
+  alias(libs.plugins.shadow)
 }
 
 java {
@@ -29,11 +30,4 @@ spotless {
   java {
     palantirJavaFormat()
   }
-}
-
-tasks.named("jar", Jar::class) {
-  duplicatesStrategy = DuplicatesStrategy.INCLUDE
-  from({
-    configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
-  })
 }
