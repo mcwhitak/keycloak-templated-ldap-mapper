@@ -7,7 +7,6 @@ spotless = "7.0.0.BETA4"
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 
 [libraries]
-keycloak-core = { module = "org.keycloak:keycloak-core", version.ref = "keycloak" }
 keycloak-server-spi = { module = "org.keycloak:keycloak-server-spi", version.ref = "keycloak" }
 keycloak-server-spi-private = {module = "org.keycloak:keycloak-server-spi-private", version.ref = "keycloak" }
 keycloak-services = { module = "org.keycloak:keycloak-services", version.ref = "keycloak" }
