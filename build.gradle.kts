@@ -1,5 +1,6 @@
 plugins {
   `java-library`
+  id("com.diffplug.spotless") version "7.0.0.BETA4"
 }
 
 java {
@@ -22,5 +23,11 @@ testing {
     val test by getting(JvmTestSuite::class) {
       useJUnitJupiter()
     }
+  }
+}
+
+spotless {
+  java {
+    palantirJavaFormat()
   }
 }
