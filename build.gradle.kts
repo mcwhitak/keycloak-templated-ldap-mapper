@@ -12,10 +12,10 @@ java {
 
 dependencies {
   implementation(libs.freemarker)
-  implementation(libs.keycloak.server.spi)
-  implementation(libs.keycloak.server.spi.private)
-  implementation(libs.keycloak.services)
-  implementation(libs.keycloak.ldap.federation)
+  shadow(libs.keycloak.server.spi)
+  shadow(libs.keycloak.server.spi.private)
+  shadow(libs.keycloak.services)
+  shadow(libs.keycloak.ldap.federation)
 }
 
 testing {
@@ -31,3 +31,5 @@ spotless {
     palantirJavaFormat()
   }
 }
+
+
