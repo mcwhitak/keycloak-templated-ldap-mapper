@@ -5,19 +5,16 @@ public class LdapTemplatedMapperConfig {
   private final String ldapTemplateName;
   private final String ssoAttributeName;
   private final String ssoTemplateName;
-  private final String alwaysReadFromLdapName;
 
   public LdapTemplatedMapperConfig(
       String ldapAttributeName,
       String ldapTemplateName,
       String ssoAttributeName,
-      String ssoTemplateName,
-      String alwaysReadFromLdapName) {
+      String ssoTemplateName) {
     this.ldapAttributeName = ldapAttributeName;
     this.ldapTemplateName = ldapTemplateName;
     this.ssoAttributeName = ssoAttributeName;
     this.ssoTemplateName = ssoTemplateName;
-    this.alwaysReadFromLdapName = alwaysReadFromLdapName;
   }
 
   public String getLdapAttributeName() {
@@ -35,9 +32,4 @@ public class LdapTemplatedMapperConfig {
   public String getSsoTemplateName() {
     return this.ssoTemplateName;
   }
-
-  public String getAlwaysReadFromLdapName() {
-    return this.alwaysReadFromLdapName;
-  }
-
 }

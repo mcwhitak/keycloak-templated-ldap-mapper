@@ -6,17 +6,17 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
-import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
+import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 
-public class LdapTemplatedMapperFactory extends AbstractLDAPStorageMapperFactory {
+public class LdapTemplatedMapperFactory extends UserAttributeLDAPStorageMapperFactory {
 
   private static final LdapTemplatedMapperConfig config = new LdapTemplatedMapperConfig(
-      "ldap.attribute",
+      UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE,
       "from.ldap.template",
-      "sso.attribute",
-      "from.sso.template",
-      "always.read.value.from.ldap");
+      UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE,
+      "from.sso.template");
 
 
   @Override
@@ -31,23 +31,13 @@ public class LdapTemplatedMapperFactory extends AbstractLDAPStorageMapperFactory
 
   @Override
   public List<ProviderConfigProperty> getConfigProperties() {
-    return ProviderConfigurationBuilder.create()
-      .property()
-      .name(config.getLdapAttributeName())
-      .label("LDAP attribute")
-      .helpText("Attribute in LDAP that is mapped to/from")
-      .type(ProviderConfigProperty.STRING_TYPE)
-      .add()
+    List<ProviderConfigProperty> baseConfig = super.getConfigProperties();
+
+    List<ProviderConfigProperty> additionalConfig = ProviderConfigurationBuilder.create()
       .property()
       .name(config.getLdapTemplateName())
       .label("From LDAP Freemarker Template")
       .helpText("Freemarker template to transform values that come from LDAP")
-      .type(ProviderConfigProperty.STRING_TYPE)
-      .add()
-      .property()
-      .name(config.getSsoAttributeName())
-      .label("SSO attribute")
-      .helpText("Attribute in Keycloak that is mapped to/from")
       .type(ProviderConfigProperty.STRING_TYPE)
       .add()
       .property()
@@ -56,14 +46,10 @@ public class LdapTemplatedMapperFactory extends AbstractLDAPStorageMapperFactory
       .helpText("Freemarker template to transform values that come from Keycloak")
       .type(ProviderConfigProperty.STRING_TYPE)
       .add()
-      .property()
-      .name(config.getAlwaysReadFromLdapName())
-      .label("Always Read Value From LDAP")
-      .helpText("If on, then during reading of the LDAP attribute value will always used instead of the value from Keycloak DB")
-      .type(ProviderConfigProperty.BOOLEAN_TYPE)
-      .defaultValue("false")
-      .add()
       .build();
+
+    baseConfig.addAll(additionalConfig);
+    return baseConfig;
   }
 
   @Override
