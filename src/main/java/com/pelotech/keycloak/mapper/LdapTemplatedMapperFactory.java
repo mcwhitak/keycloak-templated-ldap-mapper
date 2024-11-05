@@ -3,6 +3,7 @@ package com.pelotech.keycloak.mapper;
 import freemarker.template.Configuration;
 import java.util.List;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
@@ -13,10 +14,12 @@ import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
 public class LdapTemplatedMapperFactory extends UserAttributeLDAPStorageMapperFactory {
 
     private static final LdapTemplatedMapperConfig config = new LdapTemplatedMapperConfig(
-            UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE,
-            "from.ldap.template",
             UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE,
+            "from.ldap.template",
+            UserAttributeLDAPStorageMapper.USER_MODEL_ATTRIBUTE,
             "from.sso.template");
+
+    private List<ProviderConfigProperty> properties = getConfigProperties();
 
     @Override
     public String getId() {
@@ -28,11 +31,8 @@ public class LdapTemplatedMapperFactory extends UserAttributeLDAPStorageMapperFa
         return "Use Freemarker templates to map between ldap and sso attributes";
     }
 
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        List<ProviderConfigProperty> baseConfig = super.getConfigProperties();
-
-        List<ProviderConfigProperty> additionalConfig = ProviderConfigurationBuilder.create()
+    public List<ProviderConfigProperty> getAdditionalConfig() {
+        return ProviderConfigurationBuilder.create()
                 .property()
                 .name(config.getLdapTemplateName())
                 .label("From LDAP Freemarker Template")
@@ -46,8 +46,21 @@ public class LdapTemplatedMapperFactory extends UserAttributeLDAPStorageMapperFa
                 .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
                 .build();
+    }
 
-        baseConfig.addAll(additionalConfig);
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        List<ProviderConfigProperty> baseConfig = super.getConfigProperties();
+        baseConfig.addAll(getAdditionalConfig());
+
+        return baseConfig;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties(RealmModel realm, ComponentModel parent) {
+        List<ProviderConfigProperty> baseConfig = super.getConfigProperties(realm, parent);
+        baseConfig.addAll(getAdditionalConfig());
+
         return baseConfig;
     }
 

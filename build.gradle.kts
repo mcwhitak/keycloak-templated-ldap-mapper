@@ -32,4 +32,7 @@ spotless {
   }
 }
 
+tasks.named("build") {
+  dependsOn(tasks.named("shadowJar"))
+}
 
