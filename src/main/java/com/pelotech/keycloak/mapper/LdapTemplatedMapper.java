@@ -20,11 +20,14 @@ import org.keycloak.models.utils.UserModelDelegate;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.storage.ldap.mappers.TxAwareLDAPUserModelDelegate;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 
 public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
 
     private static final Logger logger = Logger.getLogger(LdapTemplatedMapper.class);
+    private static final String SSO_TAG = "sso";
+    private static final String LDAP_TAG = "ldap";
 
     private final LdapTemplatedMapperConfig config;
     private final Configuration freemarkerConfig;
@@ -45,7 +48,6 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
 
     @Override
     public void onImportUserFromLDAP(LDAPObject ldapUser, UserModel user, RealmModel realm, boolean isCreate) {
-
         boolean isBinaryAttribute = mapperModel.get(UserAttributeLDAPStorageMapper.IS_BINARY_ATTRIBUTE, false);
         if (isBinaryAttribute) {
             return;
@@ -56,12 +58,31 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
         String ldapAttribute = getStringConfig(config.getLdapAttributeName());
         String rawLdapValue = ldapUser.getAttributeAsString(ldapAttribute);
 
-        String result = runTemplate("ldap", ldapTemplate, rawLdapValue);
+        if (rawLdapValue == null) {
+            super.onImportUserFromLDAP(ldapUser, user, realm, isCreate);
+            return;
+        }
+
+        String result = runTemplate(LDAP_TAG, ldapTemplate, rawLdapValue);
 
         String ssoAttribute = getStringConfig(config.getSsoAttributeName());
         logger.debugf(
                 "Setting sso attribute '%s' on user '%s' from ldap attribute '%s' with value '%s' transformed from '%s'",
                 ssoAttribute, user.getUsername(), ldapAttribute, result, rawLdapValue);
+
+        // Account for boolean attribute coercion
+        if (ssoAttribute.equals(UserModel.ENABLED)) {
+            if (result.equals("true") || result.equals("false")) {
+                user.setEnabled(Boolean.valueOf(result));
+            }
+
+            logger.debugf(
+                    "Attempted to set %s attribute with value '%s' which is not (true | false)",
+                    UserModel.ENABLED, result);
+
+            return;
+        }
+
         user.setSingleAttribute(ssoAttribute, result);
     }
 
@@ -72,12 +93,21 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
         String ssoAttribute = getStringConfig(config.getSsoAttributeName());
         List<String> rawSsoList = user.getAttributes().get(ssoAttribute);
 
+        if (ssoAttribute.equals(UserModel.ENABLED)) {
+            rawSsoList = Arrays.asList(Boolean.toString(user.isEnabled()));
+        }
+
+        if (rawSsoList == null) {
+            super.onRegisterUserToLDAP(ldapUser, user, realm);
+            return;
+        }
+
         // Collapse values into comma separated string
         String rawSsoValue = String.join(",", rawSsoList);
-        String result = runTemplate("sso", ssoTemplate, rawSsoValue);
+        String result = runTemplate(SSO_TAG, ssoTemplate, rawSsoValue);
 
         String ldapAttribute = getStringConfig(config.getLdapAttributeName());
-        logger.debugf(
+        logger.infof(
                 "Setting ldap attribute '%s' on user '%s' from sso attribute '%s' with value '%s' transformed from '%s'",
                 ldapAttribute, user.getUsername(), ssoAttribute, result, rawSsoValue);
         ldapUser.setSingleAttribute(ldapAttribute, result);
@@ -115,12 +145,17 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
 
         // Write through logic on changes to keycloak directly
         if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE && !isReadOnly()) {
-            proxy = new UserModelDelegate(proxy) {
+            proxy = new TxAwareLDAPUserModelDelegate(proxy, ldapProvider, ldapUser) {
                 @Override
                 public void setSingleAttribute(String name, String value) {
                     String finalValue = value;
                     if (name.equals(ssoAttribute)) {
-                        finalValue = runTemplate("sso", ssoTemplate, value);
+                        finalValue = runTemplate(SSO_TAG, ssoTemplate, value);
+                        if (name.equals(UserModel.ENABLED)
+                                && (finalValue.equals("true") || finalValue.equals("false"))) {
+                            setEnabled(Boolean.valueOf(finalValue));
+                            return;
+                        }
                     }
                     super.setSingleAttribute(name, finalValue);
                 }
@@ -130,10 +165,9 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
                     if (name.equals(ssoAttribute)) {
                         String concatValue = String.join(",", values);
 
-                        String result = runTemplate("sso", ssoTemplate, concatValue);
+                        String result = runTemplate(SSO_TAG, ssoTemplate, concatValue);
 
                         super.setAttribute(name, Arrays.asList(result.split(",")));
-                        this.setSingleAttribute(name, concatValue);
                     } else {
                         super.setAttribute(name, values);
                     }
@@ -143,7 +177,7 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
                 public void setLastName(String lastName) {
                     String finalValue = lastName;
                     if (ssoAttribute.equals(UserModel.LAST_NAME)) {
-                        finalValue = runTemplate("sso", ssoTemplate, lastName);
+                        finalValue = runTemplate(SSO_TAG, ssoTemplate, lastName);
                     }
                     super.setLastName(finalValue);
                 }
@@ -152,9 +186,27 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
                 public void setFirstName(String firstName) {
                     String finalValue = firstName;
                     if (ssoAttribute.equals(UserModel.FIRST_NAME)) {
-                        finalValue = runTemplate("sso", ssoTemplate, firstName);
+                        finalValue = runTemplate(SSO_TAG, ssoTemplate, firstName);
                     }
                     super.setFirstName(finalValue);
+                }
+
+                /**
+                 * Enabled needs special treatment since the existing path doesn't write back the
+                 * enabled/disabled flag (as depending on the LDAP provider it can be of different forms)
+                 *
+                 * Here we check if enabled is the attribute we're templating and if so force changes to
+                 * also update the reference in LDAP
+                 */
+                @Override
+                public void setEnabled(boolean enabled) {
+                    super.setEnabled(enabled);
+                    if (ssoAttribute.equals(UserModel.ENABLED)) {
+                        String finalValue = runTemplate(SSO_TAG, ssoTemplate, Boolean.toString(enabled));
+
+                        ensureTransactionStarted();
+                        ldapUser.setSingleAttribute(ldapAttribute, finalValue);
+                    }
                 }
             };
         }
@@ -167,7 +219,7 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
                 public String getFirstAttribute(String name) {
                     if (name.equalsIgnoreCase(ssoAttribute)) {
                         String valueBeforeTemplating = ldapUser.getAttributeAsString(ldapAttribute);
-                        return runTemplate("ldap", ldapTemplate, name);
+                        return runTemplate(LDAP_TAG, ldapTemplate, name);
                     }
 
                     return super.getFirstAttribute(name);
@@ -182,7 +234,7 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
                         }
 
                         String concatValue = String.join(",", values);
-                        String finalValue = runTemplate("ldap", ldapTemplate, concatValue);
+                        String finalValue = runTemplate(LDAP_TAG, ldapTemplate, concatValue);
 
                         return Arrays.asList(finalValue.split(","));
                     }
@@ -206,7 +258,7 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
                     Set<String> attributeValues = ldapUser.getAttributeAsSet(ldapAttribute);
                     if (attributeValues != null) {
                         String concatValue = String.join(",", attributeValues);
-                        String finalValue = runTemplate("ldap", ldapTemplate, concatValue);
+                        String finalValue = runTemplate(LDAP_TAG, ldapTemplate, concatValue);
 
                         List<String> finalValues = Arrays.asList(finalValue.split(","));
                         attrs.put(ssoAttribute, finalValues);
@@ -219,7 +271,7 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
                 public String getEmail() {
                     if (UserModel.EMAIL.equalsIgnoreCase(ssoAttribute)) {
                         String email = ldapUser.getAttributeAsString(ldapAttribute);
-                        return runTemplate("ldap", ldapTemplate, email);
+                        return runTemplate(LDAP_TAG, ldapTemplate, email);
                     }
                     return super.getEmail();
                 }
@@ -228,7 +280,7 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
                 public String getLastName() {
                     if (UserModel.LAST_NAME.equalsIgnoreCase(ssoAttribute)) {
                         String lastName = ldapUser.getAttributeAsString(ldapAttribute);
-                        return runTemplate("ldap", ldapTemplate, lastName);
+                        return runTemplate(LDAP_TAG, ldapTemplate, lastName);
                     }
                     return super.getLastName();
                 }
@@ -237,7 +289,7 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
                 public String getFirstName() {
                     if (UserModel.FIRST_NAME.equalsIgnoreCase(ssoAttribute)) {
                         String firstName = ldapUser.getAttributeAsString(ldapAttribute);
-                        return runTemplate("ldap", ldapTemplate, firstName);
+                        return runTemplate(LDAP_TAG, ldapTemplate, firstName);
                     }
                     return super.getFirstName();
                 }
