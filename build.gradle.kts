@@ -62,6 +62,7 @@ publishing {
     create<MavenPublication>("maven") {
         groupId = "com.pelotech"
         artifactId = "keycloak-templated-ldap-mapper"
+        version = project.property("version").toString()
 
         from(components["java"])
     }
