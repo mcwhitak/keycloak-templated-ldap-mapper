@@ -58,6 +58,14 @@ publishing {
       }
     }
   }
+  publications {
+    create<MavenPublication>("maven") {
+        groupId = "com.pelotech"
+        artifactId = "keycloak-templated-ldap-mapper"
+
+        from(components["java"])
+    }
+  }
 }
 
 tasks.named("build") {
