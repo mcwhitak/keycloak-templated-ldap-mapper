@@ -3,6 +3,7 @@ keycloak = "18.0.18.redhat-00001"
 freemarker = "2.3.31"
 spotless = "7.0.0.BETA4"
 shadow = "8.3.5"
+testcontainers = "1.20.3"
 
 [plugins]
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
@@ -13,4 +14,11 @@ keycloak-server-spi = { module = "org.keycloak:keycloak-server-spi", version.ref
 keycloak-server-spi-private = {module = "org.keycloak:keycloak-server-spi-private", version.ref = "keycloak" }
 keycloak-services = { module = "org.keycloak:keycloak-services", version.ref = "keycloak" }
 keycloak-ldap-federation = { module = "org.keycloak:keycloak-ldap-federation", version.ref = "keycloak" }
+keycloak-admin-client = { module = "org.keycloak:keycloak-admin-client", version.ref = "keycloak" }
 freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
+testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+
+[bundles]
+keycloak = ["keycloak-server-spi", "keycloak-server-spi-private", "keycloak-services", "keycloak-ldap-federation"]
+testcontainers = [ "testcontainers-junit", "testcontainers-core" ]

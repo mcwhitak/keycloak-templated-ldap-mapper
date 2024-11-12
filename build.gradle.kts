@@ -10,21 +10,25 @@ java {
   }
 }
 
-dependencies {
-  implementation(libs.freemarker)
-  shadow(libs.keycloak.server.spi)
-  shadow(libs.keycloak.server.spi.private)
-  shadow(libs.keycloak.services)
-  shadow(libs.keycloak.ldap.federation)
-}
-
 testing {
   suites {
-    val test by getting(JvmTestSuite::class) {
+    register<JvmTestSuite>("integrationTest") {
       useJUnitJupiter()
+
+      dependencies {
+        implementation(project())
+        implementation(libs.keycloak.admin.client)
+        implementation.bundle(libs.bundles.testcontainers)
+      }
     }
   }
 }
+
+dependencies {
+  implementation(libs.freemarker)
+  shadow(libs.bundles.keycloak)
+}
+
 
 spotless {
   java {
@@ -36,3 +40,13 @@ tasks.named("build") {
   dependsOn(tasks.named("shadowJar"))
 }
 
+tasks.named("check") {
+    dependsOn(testing.suites.named("integrationTest"))
+}
+
+tasks.named("integrationTest", Test::class) {
+  val jarFile = tasks.named("jar").get().getOutputs().getFiles().getSingleFile()
+  doFirst {
+    environment("JAR_FILE", jarFile)
+  }
+}
