@@ -4,7 +4,18 @@ This project contains an LDAP User Attribute Mapper for Keycloak that allows the
 This is meant to solve use cases where attributes do not have an explicit 1:1 mapping and instead there must be some translation (negating a boolean, sanitizing input, etc).
 
 ## Usage
-TODO
+Download the JAR from the latest release and place in your keycloak installations `/providers` folder. Upon restart you should have the ability to select the `ldap-templated-mapper` from within the `User Federation` -> `Settings` -> `New Mapper` pane.
+
+There are two templates that can be specified, one when values flow from Keycloak -> LDAP and another when values flow from LDAP -> Keycloak. When writing templates where Keycloak is the value source, the value will be available as `${ssoValue}` and when writing templates where LDAP is the value source the value is available as `${ldapValue}`. 
+
+Within the `integrationTest` task there is an example of a conditional template that leverages these values:
+
+```
+from.ldap.template = <#if ldapValue ==\"true\">false<#else>true</#if>
+from.sso.template = <#if ssoValue == \"true\">false<#else>true</#if>
+```
+
+The project was initially conceived for the specific purpose of overriding the mismatch between the ldap `nsaccountlock`flag and the keycloak `enabled` flag so for other reserved properties (email, firstName, etc) there may be some sharp edges. Feel free to make a pull request or log an issue if there is a feature you would like to see added or a bug you discover.
 
 ## Prerequisites
 
