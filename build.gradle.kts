@@ -1,5 +1,6 @@
 plugins {
   `java-library`
+  `maven-publish`
   alias(libs.plugins.spotless)
   alias(libs.plugins.shadow)
 }
@@ -8,6 +9,11 @@ java {
   toolchain {
     languageVersion = JavaLanguageVersion.of(8)
   }
+}
+
+dependencies {
+  implementation(libs.freemarker)
+  shadow(libs.bundles.keycloak)
 }
 
 testing {
@@ -20,19 +26,37 @@ testing {
         implementation(libs.keycloak.admin.client)
         implementation.bundle(libs.bundles.testcontainers)
       }
+
+      targets {
+          all {
+              testTask.configure {
+                val jarFile = tasks.named("jar").get().getOutputs().getFiles().getSingleFile()
+                doFirst {
+                  environment("JAR_FILE", jarFile)
+                }
+              }
+          }
+      }
     }
   }
 }
 
-dependencies {
-  implementation(libs.freemarker)
-  shadow(libs.bundles.keycloak)
-}
-
-
 spotless {
   java {
     palantirJavaFormat()
+  }
+}
+
+publishing {
+  repositories {
+    maven {
+      name = "GitHubPackages"
+      url = uri("https://maven.pkg.github.com/mcwhitak/keycloak-templated-ldap-mapper")
+      credentials {
+        username = System.getenv("GITHUB_ACTOR")
+        password = System.getenv("GITHUB_TOKEN")
+      }
+    }
   }
 }
 
@@ -42,11 +66,4 @@ tasks.named("build") {
 
 tasks.named("check") {
     dependsOn(testing.suites.named("integrationTest"))
-}
-
-tasks.named("integrationTest", Test::class) {
-  val jarFile = tasks.named("jar").get().getOutputs().getFiles().getSingleFile()
-  doFirst {
-    environment("JAR_FILE", jarFile)
-  }
 }
