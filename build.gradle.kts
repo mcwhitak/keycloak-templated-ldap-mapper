@@ -1,6 +1,5 @@
 plugins {
   `java-library`
-  `maven-publish`
   alias(libs.plugins.spotless)
 }
 
@@ -43,28 +42,6 @@ testing {
 spotless {
   java {
     palantirJavaFormat()
-  }
-}
-
-publishing {
-  repositories {
-    maven {
-      name = "GitHubPackages"
-      url = uri("https://maven.pkg.github.com/mcwhitak/keycloak-templated-ldap-mapper")
-      credentials {
-        username = System.getenv("GITHUB_ACTOR")
-        password = System.getenv("GITHUB_TOKEN")
-      }
-    }
-  }
-  publications {
-    create<MavenPublication>("maven") {
-        groupId = "com.pelotech"
-        artifactId = "keycloak-templated-ldap-mapper"
-        version = project.property("version").toString()
-
-        from(components["java"])
-    }
   }
 }
 
