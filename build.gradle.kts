@@ -2,7 +2,6 @@ plugins {
   `java-library`
   `maven-publish`
   alias(libs.plugins.spotless)
-  alias(libs.plugins.shadow)
 }
 
 java {
@@ -13,7 +12,7 @@ java {
 
 dependencies {
   implementation(libs.freemarker)
-  shadow(libs.bundles.keycloak)
+  implementation(libs.bundles.keycloak)
 }
 
 testing {
@@ -67,10 +66,6 @@ publishing {
         from(components["java"])
     }
   }
-}
-
-tasks.named("build") {
-  dependsOn(tasks.named("shadowJar"))
 }
 
 tasks.named("check") {
