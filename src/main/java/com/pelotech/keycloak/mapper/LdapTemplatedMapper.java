@@ -58,14 +58,18 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
         String ldapAttribute = getStringConfig(config.getLdapAttributeName());
         String rawLdapValue = ldapUser.getAttributeAsString(ldapAttribute);
 
+        String ssoAttribute = getStringConfig(config.getSsoAttributeName());
+
         if (rawLdapValue == null) {
-            super.onImportUserFromLDAP(ldapUser, user, realm, isCreate);
+            // Ensure only non-boolean fields are set to null
+            if (!ssoAttribute.equals(UserModel.ENABLED)) {
+                super.onImportUserFromLDAP(ldapUser, user, realm, isCreate);
+            }
             return;
         }
 
         String result = runTemplate(LDAP_TAG, ldapTemplate, rawLdapValue);
 
-        String ssoAttribute = getStringConfig(config.getSsoAttributeName());
         logger.debugf(
                 "Setting sso attribute '%s' on user '%s' from ldap attribute '%s' with value '%s' transformed from '%s'",
                 ssoAttribute, user.getUsername(), ldapAttribute, result, rawLdapValue);
