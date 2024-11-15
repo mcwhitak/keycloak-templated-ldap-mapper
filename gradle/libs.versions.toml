@@ -1,5 +1,5 @@
 [versions]
-keycloak = "21.1.2"
+keycloak = "18.0.18.redhat-00001"
 freemarker = "2.3.31"
 spotless = "7.0.0.BETA4"
 shadow = "8.3.5"

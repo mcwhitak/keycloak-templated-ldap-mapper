@@ -6,6 +6,8 @@ import freemarker.template.TemplateException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -250,6 +252,23 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
                     }
 
                     return attrs;
+                }
+
+                @Override
+                public List<String> getAttribute(String name) {
+                    if (name.equalsIgnoreCase(ssoAttribute)) {
+                        Collection<String> values = ldapUser.getAttributeAsSet(ldapAttribute);
+                        if (values == null) {
+                            return Collections.emptyList();
+                        }
+
+                        String concatValue = String.join(",", values);
+                        String finalValue = runTemplate(LDAP_TAG, ldapTemplate, concatValue);
+
+                        return Arrays.asList(finalValue.split(","));
+                    }
+
+                    return super.getAttribute(name);
                 }
 
                 @Override

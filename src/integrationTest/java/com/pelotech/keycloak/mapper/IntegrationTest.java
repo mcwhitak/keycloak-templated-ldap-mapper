@@ -43,7 +43,7 @@ public class IntegrationTest {
             .withEnv("DS_DM_PASSWORD", "password");
 
     @Container
-    private static final GenericContainer<?> keycloak = new GenericContainer<>("quay.io/keycloak/keycloak:21.1.2")
+    private static final GenericContainer<?> keycloak = new GenericContainer<>("quay.io/keycloak/keycloak:18.0.2")
             .withCopyFileToContainer(
                     MountableFile.forHostPath(System.getenv("JAR_FILE")),
                     "/opt/keycloak/providers/ldap-templated-mapper.jar")
