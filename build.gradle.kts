@@ -14,6 +14,8 @@ dependencies {
   implementation(libs.bundles.keycloak)
 }
 
+version = libs.versions.keycloak.get()
+
 testing {
   suites {
     register<JvmTestSuite>("integrationTest") {

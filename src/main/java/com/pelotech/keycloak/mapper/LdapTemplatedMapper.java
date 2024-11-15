@@ -227,25 +227,6 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
                     return super.getFirstAttribute(name);
                 }
 
-                /*
-                @Override
-                public List<String> getAttribute(String name) {
-                    if (name.equalsIgnoreCase(ssoAttribute)) {
-                        Collection<String> values = ldapUser.getAttributeAsSet(ldapAttribute);
-                        if (values == null) {
-                            return Collections.emptyList();
-                        }
-
-                        String concatValue = String.join(",", values);
-                        String finalValue = runTemplate(LDAP_TAG, ldapTemplate, concatValue);
-
-                        return Arrays.asList(finalValue.split(","));
-                    }
-
-                    return super.getAttribute(name);
-                }
-                */
-
                 @Override
                 public Map<String, List<String>> getAttributes() {
                     Map<String, List<String>> attrs = new HashMap<>(super.getAttributes());
