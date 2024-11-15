@@ -1,3 +1,5 @@
+# THIS IS CURRENTLY STILL A WIP DO NOT USE THIS
+
 # Keycloak Templated LDAP Mapper
 This project contains an LDAP User Attribute Mapper for Keycloak that allows the injection of Freemarker templates for post-processing. 
 

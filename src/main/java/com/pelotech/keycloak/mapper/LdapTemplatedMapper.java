@@ -229,6 +229,7 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
                     return super.getFirstAttribute(name);
                 }
 
+                /*
                 @Override
                 public List<String> getAttribute(String name) {
                     if (name.equalsIgnoreCase(ssoAttribute)) {
@@ -245,6 +246,7 @@ public class LdapTemplatedMapper extends UserAttributeLDAPStorageMapper {
 
                     return super.getAttribute(name);
                 }
+                */
 
                 @Override
                 public Map<String, List<String>> getAttributes() {
