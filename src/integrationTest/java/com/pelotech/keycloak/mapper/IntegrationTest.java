@@ -227,6 +227,12 @@ public class IntegrationTest {
         assertEquals("Error: Account is already active\n", execResult.getStderr());
     }
 
+    @Test
+    public void callAdminAPI() {
+        // Sanity check to ensure response can be deserialized
+        kcClient.serverInfo().getInfo();
+    }
+
     private static String getResourceAsString(String filename) {
         try {
             Path path = Paths.get(

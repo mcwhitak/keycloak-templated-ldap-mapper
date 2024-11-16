@@ -1,6 +1,7 @@
 package com.pelotech.keycloak.mapper;
 
 import freemarker.template.Configuration;
+import java.util.LinkedList;
 import java.util.List;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.RealmModel;
@@ -50,18 +51,30 @@ public class LdapTemplatedMapperFactory extends UserAttributeLDAPStorageMapperFa
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
+        // WARNING: Do not modify this list as it's the statically defined list on the superclass
+        // Modifying this list modifies it for both concrete instances of this class and the superclass
         List<ProviderConfigProperty> baseConfig = super.getConfigProperties();
-        baseConfig.addAll(getAdditionalConfig());
 
-        return baseConfig;
+        // Only using LinkedList here as that's what Keycloak uses internally
+        List<ProviderConfigProperty> newConfig = new LinkedList<>();
+        newConfig.addAll(baseConfig);
+        newConfig.addAll(getAdditionalConfig());
+
+        return newConfig;
     }
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties(RealmModel realm, ComponentModel parent) {
+        // WARNING: Do not modify this list as it's the statically defined list on the superclass
+        // Modifying this list modifies it for both concrete instances of this class and the superclass
         List<ProviderConfigProperty> baseConfig = super.getConfigProperties(realm, parent);
-        baseConfig.addAll(getAdditionalConfig());
 
-        return baseConfig;
+        // Only using LinkedList here as that's what Keycloak uses internally
+        List<ProviderConfigProperty> newConfig = new LinkedList<>();
+        newConfig.addAll(baseConfig);
+        newConfig.addAll(getAdditionalConfig());
+
+        return newConfig;
     }
 
     @Override
